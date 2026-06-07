@@ -1,8 +1,6 @@
 package com.dondoc.service;
 
-import com.dondoc.dto.ApiResponse;
-import com.dondoc.dto.UserMeResponse;
-import com.dondoc.dto.Users;
+import com.dondoc.dto.*;
 import com.dondoc.entity.User;
 import com.dondoc.repository.UserRepository;
 import org.springframework.stereotype.Service;
@@ -79,6 +77,29 @@ public class UserService {
         );
 
         return new ApiResponse<>(true, data, "내 정보 조회 성공");
+    }
+
+    public ApiResponse<UserPatchResponse> updateUserMe(Long userId, UserPatchRequest request){
+        userRepository.update(userId, request);
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+
+        long monthlyBudget = user.getMonthlyIncome() * user.getTargetExpenseRatio() / 100;
+        long dailyBudget = monthlyBudget / LocalDate.now().lengthOfMonth();
+
+        UserPatchResponse data = new UserPatchResponse(
+                user.getId(),
+                user.getName(),
+                user.getAge(),
+                user.getMonthlyIncome(),
+                user.getTargetExpenseRatio(),
+                monthlyBudget,
+                dailyBudget
+        );
+
+        return new ApiResponse<>(true, data, "프로필 설정이 완료되었습니다.");
+
     }
 
 }
