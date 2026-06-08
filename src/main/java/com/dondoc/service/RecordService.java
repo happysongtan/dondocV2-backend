@@ -12,6 +12,7 @@ import com.dondoc.repository.RecordRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
 @Service
@@ -90,6 +91,22 @@ public class RecordService {
                 dto.getType()
         );
         categoryRepository.save(category);
+    }
+
+    public Long deleteRecord(Long userId, Long recordId) {
+        if (userId == null) {
+            throw new IllegalArgumentException("인증 토큰 없음");
+        }
+
+        Recorde recorde = recordRepository.findById(recordId)
+                .orElseThrow(() -> new NoSuchElementException("거래를 찾을 수 없음"));
+
+        if (!recorde.getUserId().equals(userId)) {
+            throw new SecurityException("본인 거래가 아님");
+        }
+
+        recordRepository.deleteById(recordId);
+        return recordId;
     }
 
 }

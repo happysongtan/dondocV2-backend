@@ -1,17 +1,30 @@
 package com.dondoc.repository;
 
 import com.dondoc.entity.Recorde;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public class RecordRepository {
 
     private final JdbcTemplate jdbcTemplate;
+    private final RowMapper<Recorde> recordRowMapper = (rs, rowNum) -> new Recorde(
+            rs.getLong("id"),
+            rs.getLong("user_id"),
+            rs.getLong("category_id"),
+            rs.getLong("amount"),
+            rs.getString("description"),
+            rs.getString("memo"),
+            rs.getObject("record_date", LocalDate.class),
+            rs.getObject("created_at", LocalDateTime.class)
+    );
 
     public RecordRepository(JdbcTemplate jdbcTemplate){
         this.jdbcTemplate = jdbcTemplate;
@@ -19,20 +32,26 @@ public class RecordRepository {
 
     public List<Recorde> findAll(){
         String sql = "SELECT * FROM records";
-        return jdbcTemplate.query(sql, (rs, rowNum) -> new Recorde(
-                rs.getLong("id"),
-                rs.getLong("user_id"),
-                rs.getLong("category_id"),
-                rs.getLong("amount"),
-                rs.getString("description"),
-                rs.getString("memo"),
-                rs.getObject("record_date", LocalDate.class),
-                rs.getObject("created_at", LocalDateTime.class)
-        ));
+        return jdbcTemplate.query(sql, recordRowMapper);
+    }
+
+    public Optional<Recorde> findById(Long id) {
+        String sql = "SELECT * FROM records WHERE id = ?";
+
+        try {
+            return Optional.ofNullable(jdbcTemplate.queryForObject(sql, recordRowMapper, id));
+        } catch (EmptyResultDataAccessException e) {
+            return Optional.empty();
+        }
     }
 
     public void save(Recorde recorde) {
         String sql = "INSERT INTO records (user_id, category_id, amount, description, memo, record_date, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)";
         jdbcTemplate.update(sql, recorde.getUserId(), recorde.getCategoryId(), recorde.getAmount(), recorde.getDescription(), recorde.getMemo(), recorde.getRecordDate(), recorde.getCreatedAt());
+    }
+
+    public int deleteById(Long id) {
+        String sql = "DELETE FROM records WHERE id = ?";
+        return jdbcTemplate.update(sql, id);
     }
 }
