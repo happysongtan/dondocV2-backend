@@ -1,6 +1,7 @@
 package com.dondoc.controller;
 
 import com.dondoc.dto.ApiResponse;
+import com.dondoc.dto.UserMeResponse;
 import com.dondoc.dto.UserPatchRequest;
 import com.dondoc.dto.Users;
 import com.dondoc.service.UserService;
@@ -11,7 +12,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/user")
-public class UserController {
+public class    UserController {
 
     private final UserService userService;
 
@@ -31,14 +32,20 @@ public class UserController {
         userService.createUser(user);
     }
 
+//    @GetMapping("/me")
+//    public ResponseEntity<?> getUserMe(
+//            @RequestHeader(value = "userId", required = false) Long userId) {
+//        if (userId == null) {
+//            return ResponseEntity.status(401)
+//                    .body(new ApiResponse<>(false, null, "인증 실패."));
+//        }
+//        return ResponseEntity.ok(userService.getUserMe(userId));
+//    }
     @GetMapping("/me")
     public ResponseEntity<?> getUserMe(
             @RequestHeader(value = "userId", required = false) Long userId) {
-        if (userId == null) {
-            return ResponseEntity.status(401)
-                    .body(new ApiResponse<>(false, null, "인증 실패."));
-        }
-        return ResponseEntity.ok(userService.getUserMe(userId));
+        UserMeResponse response = userService.getUserMe(userId);
+        return ResponseEntity.ok(ApiResponse.ok(response, "월별 요약 통계 조회 성공"));
     }
 
     @PatchMapping("/me")

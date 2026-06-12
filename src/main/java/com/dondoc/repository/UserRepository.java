@@ -54,7 +54,7 @@ public class UserRepository {
                 rs.getObject("created_at", LocalDateTime.class)
 
         ), id);
-        return results.isEmpty() ? Optional.empty() : Optional.of(results.get(0));
+        return results.stream().findFirst();
     }
 
     // 사용자 기본 설정
