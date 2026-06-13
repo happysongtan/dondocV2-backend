@@ -40,7 +40,7 @@ public class RecordRepository {
 
         try {
             return Optional.ofNullable(jdbcTemplate.queryForObject(sql, recordRowMapper, id));
-        } catch (EmptyResultDataAccessException e) {
+        } catch (EmptyResultDataAccessException exception) {
             return Optional.empty();
         }
     }

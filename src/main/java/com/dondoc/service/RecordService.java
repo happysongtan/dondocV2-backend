@@ -2,17 +2,18 @@ package com.dondoc.service;
 
 import com.dondoc.dto.Categories;
 import com.dondoc.dto.MonthlyHistories;
-import com.dondoc.dto.Records;
+import com.dondoc.dto.RecordDto;
 import com.dondoc.entity.Category;
 import com.dondoc.entity.MonthlyHistory;
 import com.dondoc.entity.Recorde;
+import com.dondoc.exception.ApiException;
 import com.dondoc.repository.CategoryRepository;
 import com.dondoc.repository.MonthlyHistoryRepository;
 import com.dondoc.repository.RecordRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.http.HttpStatus;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
 @Service
@@ -27,10 +28,10 @@ public class RecordService {
         this.categoryRepository = categoryRepository;
     }
 
-    public List<Records> getRecords(){
+    public List<RecordDto.Record> getRecords(){
         List<Recorde> entities = recordRepository.findAll();
         return entities.stream()
-                .map(entity -> new Records(
+                .map(entity -> new RecordDto.Record(
                         entity.getId(),
                         entity.getUserId(),
                         entity.getCategoryId(),
@@ -68,7 +69,7 @@ public class RecordService {
                 .collect(Collectors.toList());
     }
 
-    public void createRecord(Records dto){
+    public void createRecord(RecordDto.Record dto){
         Recorde recorde = new Recorde(
                 null, dto.getUserId(), dto.getCategoryId(),
                 dto.getAmount(), dto.getDescription(), dto.getMemo(), dto.getRecordDate(),
@@ -93,20 +94,20 @@ public class RecordService {
         categoryRepository.save(category);
     }
 
-    public Long deleteRecord(Long userId, Long recordId) {
+    public RecordDto.DeleteResponse deleteRecord(Long userId, Long recordId) {
         if (userId == null) {
-            throw new IllegalArgumentException("인증 토큰 없음");
+            throw new ApiException(HttpStatus.UNAUTHORIZED, "인증 토큰 없음");
         }
 
-        Recorde recorde = recordRepository.findById(recordId)
-                .orElseThrow(() -> new NoSuchElementException("거래를 찾을 수 없음"));
+        Recorde record = recordRepository.findById(recordId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "거래를 찾을 수 없음"));
 
-        if (!recorde.getUserId().equals(userId)) {
-            throw new SecurityException("본인 거래가 아님");
+        if (!record.getUserId().equals(userId)) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "본인 거래가 아님");
         }
 
         recordRepository.deleteById(recordId);
-        return recordId;
+        return new RecordDto.DeleteResponse(recordId);
     }
 
 }
