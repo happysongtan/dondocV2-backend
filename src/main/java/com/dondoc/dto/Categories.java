@@ -17,7 +17,7 @@ public class Categories {
         private long id;
         private String name;
     }
-  
+
     @Setter
     @NoArgsConstructor
     @AllArgsConstructor
@@ -42,5 +42,12 @@ public class Categories {
     public static class CategoryDto {
         Long id;
         String name;
+    }
+
+    @Getter
+    @AllArgsConstructor
+    public static class Info {
+        private Long id;
+        private String name;
     }
 }

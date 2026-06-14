@@ -1,6 +1,7 @@
 package com.dondoc.repository;
 
 import com.dondoc.dto.Records;
+import com.dondoc.dto.Categories;
 import com.dondoc.entity.Recorde;
 import com.dondoc.repository.projection.ExpenseCategorySummary;
 import com.dondoc.repository.projection.MonthlyRecordAmountSummary;
@@ -41,20 +42,10 @@ public class RecordRepository {
     public RecordRepository(JdbcTemplate jdbcTemplate){
         this.jdbcTemplate = jdbcTemplate;
     }
-  
+
     public List<Recorde> findAll(){
         String sql = "SELECT * FROM records";
         return jdbcTemplate.query(sql, recordRowMapper);
-    }
-
-    public Optional<Recorde> findById(Long id) {
-        String sql = "SELECT * FROM records WHERE id = ?";
-
-        try {
-            return Optional.ofNullable(jdbcTemplate.queryForObject(sql, recordRowMapper, id));
-        } catch (EmptyResultDataAccessException exception) {
-            return Optional.empty();
-        }
     }
 
     public MonthlyRecordTotal findMonthlyTotal(Long userId, LocalDate startDate, LocalDate endDate) {
@@ -124,7 +115,7 @@ public class RecordRepository {
             userId, start, end
         );
     }
-  
+
     public Long save(Long userId, Records.RecordSaveRequest saveRequest) {
         String sql = "INSERT INTO records (user_id, category_id, amount, description, memo, record_date) VALUES (?, ?, ?, ?, ?, ?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
@@ -141,8 +132,8 @@ public class RecordRepository {
         }, keyHolder);
         return Objects.requireNonNull(keyHolder.getKey()).longValue();
     }
-              
-    
+
+
     public Optional<Recorde> findById(Long id) {
         String sql = "SELECT * FROM records WHERE id = ?";
         return jdbcTemplate.query(sql,(rs, rowNum) -> new Recorde(
@@ -168,7 +159,7 @@ public class RecordRepository {
             recorde.getId()
         );
     }
-  
+
     public MonthlyRecordAmountSummary findMonthlyAmountSummary(Long userId, LocalDate startDate, LocalDate endDate) {
         String sql = """
                 SELECT
@@ -219,5 +210,77 @@ public class RecordRepository {
     public int deleteById(Long id) {
         String sql = "DELETE FROM records WHERE id = ?";
         return jdbcTemplate.update(sql, id);
+    }
+
+    public List<Records.ItemResponse> findByUserMonth(Long userId, String yearMonth, String type){
+        String sql = "SELECT r.id, r.amount, r.description, r.memo, r.record_date, " +
+                "c.id as category_id, c.name as category_name, c.type as category_type " +
+                "FROM records r JOIN categories c ON r.category_id = c.id " +
+                "WHERE r.user_id = ? AND DATE_FORMAT(r.record_date, '%Y-%m') = ?";
+
+        if (type != null){
+            sql += " AND c.type = ?";
+
+            return jdbcTemplate.query(sql, (rs, rowNum) -> new Records.ItemResponse(
+                    rs.getLong("id"),
+                    rs.getString("category_type").toUpperCase(),
+                    rs.getString("record_date"),
+                    new Categories.Info(rs.getLong("category_id"),
+                            rs.getString("category_name")),
+                    rs.getLong("amount"),
+                    rs.getString("description"),
+                    rs.getString("memo")
+            ), userId, yearMonth, type);
+        }
+        return jdbcTemplate.query(sql, (rs, rowNum) -> new Records.ItemResponse(
+                rs.getLong("id"),
+                rs.getString("category_type").toUpperCase(),
+                rs.getString("record_date"),
+                new Categories.Info(rs.getLong("category_id"), rs.getString("category_name")),
+                rs.getLong("amount"),
+                rs.getString("description"),
+                rs.getString("memo")
+        ), userId, yearMonth);
+
+    }
+
+    public Records.Summary findSummaryByUserMonth(Long userId, String yearMonth, String type) {
+        String sql = "SELECT " +
+                "COALESCE(SUM(CASE WHEN c.type = 'INCOME' THEN r.amount ELSE 0 END), 0) AS total_income, " +
+                "COALESCE(SUM(CASE WHEN c.type = 'EXPENSE' THEN r.amount ELSE 0 END), 0) AS total_expense " +
+                "FROM records r JOIN categories c ON r.category_id = c.id " +
+                "WHERE r.user_id = ? AND DATE_FORMAT(r.record_date, '%Y-%m') = ?";
+
+        if (type != null) {
+            sql += " AND c.type = ?";
+            return jdbcTemplate.queryForObject(
+                    sql,
+                    (rs, rowNum) -> toSummary(
+                            rs.getLong("total_income"),
+                            rs.getLong("total_expense")
+                    ),
+                    userId,
+                    yearMonth,
+                    type
+            );
+        }
+
+        return jdbcTemplate.queryForObject(
+                sql,
+                (rs, rowNum) -> toSummary(
+                        rs.getLong("total_income"),
+                        rs.getLong("total_expense")
+                ),
+                userId,
+                yearMonth
+        );
+    }
+
+    private Records.Summary toSummary(long totalIncome, long totalExpense) {
+        return new Records.Summary(
+                totalIncome,
+                totalExpense,
+                totalIncome - totalExpense
+        );
     }
 }

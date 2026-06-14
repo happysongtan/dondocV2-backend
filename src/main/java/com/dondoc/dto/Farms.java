@@ -80,4 +80,11 @@ public class Farms {
         private boolean joined;
         private LocalDateTime createdAt;
     }
+
+    @Getter
+    @AllArgsConstructor
+    public static class LeaveResponse {
+        private Long farmId;
+        private Long userId;
+    }
 }

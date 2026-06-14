@@ -6,6 +6,7 @@ import com.dondoc.dto.Records;
 import com.dondoc.dto.Records.RecordUpdateRequest;
 import com.dondoc.dto.Records.RecordUpdateResponse;
 import com.dondoc.dto.Records.DailySummaryResponse;
+import com.dondoc.dto.*;
 import com.dondoc.entity.Category;
 import com.dondoc.entity.MonthlyHistory;
 import com.dondoc.entity.Recorde;
@@ -14,6 +15,9 @@ import com.dondoc.repository.CategoryRepository;
 import com.dondoc.repository.MonthlyHistoryRepository;
 import com.dondoc.repository.RecordRepository;
 import com.dondoc.repository.UserRepository;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -59,10 +63,10 @@ public class RecordService {
                 .collect(Collectors.toList());
     }
 
-    public List<MonthlyHistories> getMonthlyHistories(){
+    public List<Records.MonthlyHistory> getMonthlyHistories(){
         List<MonthlyHistory> entities = monthlyHistoryRepository.findAll();
         return entities.stream()
-                .map(entity -> new MonthlyHistories(
+                .map(entity -> new Records.MonthlyHistory(
                         entity.getId(),
                         entity.getUserId(),
                         entity.getTargetMonth(),
@@ -104,7 +108,7 @@ public class RecordService {
         );
     }
 
-    public void createMonthlyHistory(MonthlyHistories dto) {
+    public void createMonthlyHistory(Records.MonthlyHistory dto) {
         MonthlyHistory monthlyHistory = new MonthlyHistory(
                 null, dto.getUserId(), dto.getTargetMonth(),
                 dto.getAvgRatio(), dto.getHouseLevel()
@@ -219,4 +223,26 @@ public class RecordService {
 
         return result;
     }
+    //  1. repository에서 records와 summary 가져오기
+    //  2. summary + records 합쳐서 응답 반환
+    @Transactional(readOnly = true)
+    public ApiResponse<Records.MonthlyResponse> getMonthlyRecords(Long userId, String yearMonth, String type) {
+        if (userId == null) {
+            throw new ApiException(
+                    HttpStatus.UNAUTHORIZED,
+                    "인증되지 않은 사용자입니다."
+            );
+        }
+        if (userRepository.findById(userId).isEmpty()) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다.");
+        }
+
+        List<Records.ItemResponse> records = recordRepository.findByUserMonth(userId, yearMonth, type);
+        Records.Summary summary = recordRepository.findSummaryByUserMonth(userId, yearMonth, type);
+        Records.MonthlyResponse data = new Records.MonthlyResponse(summary, records);
+
+        return new ApiResponse<>(true, data, "거래 내역 조회 성공");
+
+    }
+
 }

@@ -2,6 +2,7 @@ package com.dondoc.service;
 
 import com.dondoc.dto.FarmMembers;
 import com.dondoc.dto.FarmMembers.FarmJoinResponse;
+import com.dondoc.dto.ApiResponse;
 import com.dondoc.dto.Farms;
 import com.dondoc.entity.Farm;
 import com.dondoc.entity.FarmMember;
@@ -9,8 +10,8 @@ import com.dondoc.exception.ApiException;
 import com.dondoc.repository.FarmMemberRepository;
 import com.dondoc.repository.FarmRepository;
 import com.dondoc.repository.UserRepository;
-import org.springframework.stereotype.Service;
 import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -127,4 +128,28 @@ public class FarmService {
 
         return new Farms.CreateResponse(farmId, farmName, true, createdAt);
     }
+
+    @Transactional
+    public ApiResponse<Farms.LeaveResponse> leaveFarm(Long farmId, Long userId) {
+        if (userId == null) {
+            throw new ApiException(
+                    HttpStatus.UNAUTHORIZED,
+                    "인증되지 않은 사용자입니다."
+            );
+        }
+
+        int deletedCount = farmMemberRepository.deleteByFarmIdAndUserId(farmId, userId);
+        if (deletedCount == 0) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "농장 멤버를 찾을 수 없습니다.");
+        }
+
+        int remainCount = farmMemberRepository.countByFarmId(farmId);
+        if (remainCount == 0) {
+            farmRepository.deleteById(farmId);
+        }
+
+        Farms.LeaveResponse data = new Farms.LeaveResponse(farmId, userId);
+        return new ApiResponse<>(true, data, null);
+    }
+
 }

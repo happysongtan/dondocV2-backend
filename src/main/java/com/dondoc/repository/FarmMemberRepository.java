@@ -83,4 +83,14 @@ public class FarmMemberRepository {
         String sql = "SELECT farm_id FROM farm_members WHERE user_id = ?";
         return jdbcTemplate.queryForList(sql, Long.class, userId);
     }
+
+    public int deleteByFarmIdAndUserId(Long farmId, Long userId) {
+        String sql = "DELETE FROM farm_members WHERE farm_id = ? AND user_id = ?";
+        return jdbcTemplate.update(sql, farmId, userId);
+    }
+
+    public int countByFarmId(Long farmId) {
+        String sql = "SELECT COUNT(*) FROM farm_members WHERE farm_id = ?";
+        return jdbcTemplate.queryForObject(sql, Integer.class, farmId);
+    }
 }

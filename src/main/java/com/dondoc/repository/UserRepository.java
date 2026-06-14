@@ -2,6 +2,7 @@ package com.dondoc.repository;
 
 
 import com.dondoc.dto.auth.SignUpRequest;
+import com.dondoc.dto.Users;
 import com.dondoc.entity.User;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Repository;
 
 import java.sql.PreparedStatement;
 import java.sql.Statement;
+import javax.swing.text.html.Option;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
@@ -40,6 +42,27 @@ public class UserRepository {
                 rs.getObject("created_at", LocalDateTime.class),
                 rs.getObject("last_login_at", LocalDateTime.class)
         ));
+    }
+
+    // 1인 유저 한 명만 조회
+    public Optional<User> findById(Long id){
+        String sql = "SELECT * FROM users WHERE id = ?";
+        List<User> results = jdbcTemplate.query(sql, (rs, rowNum) -> new User(
+                rs.getLong("id"),
+                rs.getString("user_id"),
+                rs.getString("user_password"),
+                rs.getString("name"),
+                rs.getInt("age"),
+                rs.getInt("current_pig_level"),
+                rs.getInt("current_house_level"),
+                rs.getInt("current_character_level"),
+                rs.getLong("monthly_income"),
+                rs.getInt("target_expense_ratio"),
+                rs.getObject("created_at", LocalDateTime.class),
+                rs.getObject("last_login_at", LocalDateTime.class)
+        ), id);
+
+        return results.stream().findFirst();
     }
 
     public Long save(SignUpRequest user){
@@ -75,27 +98,23 @@ public class UserRepository {
         return users.stream().findFirst();
     }
 
+    // 사용자 기본 설정
+    public void update(Long id, Users.PatchRequest request, User user) {
+        String sql = "UPDATE users SET name = ?, age = ?, monthly_income = ?, target_expense_ratio = ? WHERE id = ?";
+        jdbcTemplate.update(sql,
+                request.getName() != null ? request.getName() : user.getName(),
+                request.getAge() != null ? request.getAge() : user.getAge(),
+                request.getMonthlyIncome() != null ? request.getMonthlyIncome() : user.getMonthlyIncome(),
+                request.getTargetExpenseRatio() != null
+                        ? request.getTargetExpenseRatio()
+                        : user.getTargetExpenseRatio(),
+                id
+        );
+    }
+
+
     public void updateLastLoginAt(Long id) {
         String sql = "UPDATE users SET last_login_at = NOW() WHERE id = ?";
         jdbcTemplate.update(sql, id);
-    }
-
-    public Optional<User> findById(Long id) {
-        String sql = "SELECT * FROM users WHERE id = ?";
-        List<User> users = jdbcTemplate.query(sql, (rs, rowNum) -> new User(
-                rs.getLong("id"),
-                rs.getString("user_id"),
-                rs.getString("user_password"),
-                rs.getString("name"),
-                rs.getInt("age"),
-                rs.getInt("current_pig_level"),
-                rs.getInt("current_house_level"),
-                rs.getInt("current_character_level"),
-                rs.getLong("monthly_income"),
-                rs.getInt("target_expense_ratio"),
-                rs.getObject("created_at", LocalDateTime.class),
-                rs.getObject("last_login_at", LocalDateTime.class)
-        ), id);
-        return users.stream().findFirst();
     }
 }

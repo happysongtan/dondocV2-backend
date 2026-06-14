@@ -7,6 +7,7 @@ import com.dondoc.dto.Farms;
 import com.dondoc.service.FarmService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,11 +25,6 @@ public class FarmController {
     @GetMapping("")
     public ApiResponse<List<Farms.FarmGetResponse>> getFarmList(@RequestHeader("userId") Long userId) {
         return ApiResponse.ok(farmService.getFarmList(userId), "농장 목록 조회 성공");
-    }
-
-    @GetMapping("/members")
-    public List<Farms.Member> getFarmMembers() {
-        return farmService.getFarmMembers();
     }
 
     @PostMapping
@@ -52,8 +48,10 @@ public class FarmController {
             .body(ApiResponse.ok(data, message));
     }
 
-    @PostMapping("/members")
-    public void createFarmMember(@RequestBody Farms.Member farmMember){
-        farmService.createFarmMember(farmMember);
+    @DeleteMapping("/{farmId}")
+    public ResponseEntity<?> leaveFarm(
+        @RequestHeader(value = "userId", required = false) Long userId,
+            @PathVariable Long farmId) {
+        return ResponseEntity.ok(farmService.leaveFarm(farmId, userId));
     }
 }

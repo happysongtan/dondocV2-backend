@@ -67,4 +67,10 @@ public class FarmRepository {
         jdbcTemplate.update(statementCreator, keyHolder);
         return keyHolder.getKey().longValue();
     }
+
+    // 멤버가 0명이 되면 농장 자체도 삭제해야 하는데, 그때 이 메서드를 호출할 거야.
+    public void deleteById(Long farmId) {
+        String sql = "DELETE FROM farms WHERE id = ?";
+        jdbcTemplate.update(sql, farmId);
+    }
 }
