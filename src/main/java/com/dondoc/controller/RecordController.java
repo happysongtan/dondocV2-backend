@@ -1,5 +1,6 @@
 package com.dondoc.controller;
 
+import com.dondoc.dto.ApiResponse;
 import com.dondoc.dto.Categories;
 import com.dondoc.dto.MonthlyHistories;
 import com.dondoc.dto.Records;
@@ -9,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/record")
+@RequestMapping("/api/records")
 public class RecordController {
 
     private final RecordService recordService;
@@ -33,9 +34,14 @@ public class RecordController {
         return recordService.getMonthlyHistories();
     }
 
+//    @PostMapping
+//    public void createRecord(@RequestBody Records record){
+//        recordService.createRecord(record);
+//    }
+
     @PostMapping
-    public void createRecord(@RequestBody Records record){
-        recordService.createRecord(record);
+    public ApiResponse<Records.RecordSaveResponse> createRecord(@RequestHeader Long userId, @RequestBody Records.RecordSaveRequest saveRequest){
+        return ApiResponse.ok(recordService.createRecord(userId, saveRequest),"거래 추가 성공");
     }
 
     @PostMapping("/categories")
