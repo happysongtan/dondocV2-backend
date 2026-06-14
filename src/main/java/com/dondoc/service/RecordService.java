@@ -3,6 +3,8 @@ package com.dondoc.service;
 import com.dondoc.dto.Categories;
 import com.dondoc.dto.MonthlyHistories;
 import com.dondoc.dto.Records;
+import com.dondoc.dto.Records.RecordUpdateRequest;
+import com.dondoc.dto.Records.RecordUpdateResponse;
 import com.dondoc.dto.Records.DailySummaryResponse;
 import com.dondoc.entity.Category;
 import com.dondoc.entity.MonthlyHistory;
@@ -13,19 +15,19 @@ import com.dondoc.repository.MonthlyHistoryRepository;
 import com.dondoc.repository.RecordRepository;
 import com.dondoc.repository.UserRepository;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.HashMap;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+
 
 @Service
 public class RecordService {
@@ -116,6 +118,48 @@ public class RecordService {
                 dto.getType()
         );
         categoryRepository.save(category);
+    }
+
+    public RecordUpdateResponse updateRecord(long userId, long id, RecordUpdateRequest dto) {
+        userRepository.findById(userId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "존재하지 않는 사용자입니다."));
+
+        Recorde existing = recordRepository.findById(id)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "존재하지 않는 거래입니다."));
+
+        if (existing.getUserId() != userId) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "본인의 거래만 수정할 수 있습니다.");
+        }
+
+        Recorde recorde = new Recorde(
+            id,
+            existing.getUserId(),
+            dto.getCategoryId(),
+            dto.getAmount(),
+            dto.getDescription(),
+            dto.getMemo(),
+            LocalDate.parse(dto.getDate()),
+            existing.getCreatedAt()
+        );
+
+        recordRepository.update(recorde);
+
+        Recorde updated = recordRepository.findById(id)
+                .orElseThrow(() -> new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "거래 수정 후 조회에 실패했습니다."));
+        Category category = categoryRepository.findById(updated.getCategoryId());
+
+        return new RecordUpdateResponse(
+            updated.getId(),
+            category.getType(),
+            updated.getRecordDate().toString(),
+            new Categories.CategoryInfo(
+                category.getId(),
+                category.getName()
+            ),
+            updated.getAmount(),
+            updated.getDescription(),
+            updated.getMemo()
+        );
     }
 
     public List<DailySummaryResponse> getDailySummaries(long userId, YearMonth yearMonth) {

@@ -35,6 +35,22 @@ public class UserRepository {
         ));
     }
 
+    public Optional<User> findById(long id) {
+        String sql = "SELECT * FROM users WHERE id = ?";
+        return jdbcTemplate.query(sql, (rs, rowNum) -> new User(
+                rs.getLong("id"),
+                rs.getString("user_id"),
+                rs.getString("user_password"),
+                rs.getString("name"),
+                rs.getInt("age"),
+                rs.getInt("current_pig_level"),
+                rs.getInt("current_house_level"),
+                rs.getLong("monthly_income"),
+                rs.getInt("target_expense_ratio"),
+                rs.getObject("created_at", LocalDateTime.class)
+        ), id).stream().findFirst();
+    }
+
     public void save(User user){
         String sql = "INSERT INTO users (user_id, user_password, name, age, current_pig_level, current_house_level, current_character_level, monthly_income, target_expense_ratio, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 

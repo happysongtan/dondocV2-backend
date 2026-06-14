@@ -4,8 +4,10 @@ import com.dondoc.dto.ApiResponse;
 import com.dondoc.dto.Categories;
 import com.dondoc.dto.MonthlyHistories;
 import com.dondoc.dto.Records;
-import com.dondoc.dto.Records.DailySummaryResponse;
+import com.dondoc.dto.Records.RecordUpdateRequest;
+import com.dondoc.dto.Records.RecordUpdateResponse;
 import com.dondoc.service.RecordService;
+import com.dondoc.dto.Records.DailySummaryResponse;
 import java.time.Year;
 import java.time.YearMonth;
 import org.springframework.http.ResponseEntity;
@@ -53,6 +55,16 @@ public class RecordController {
         recordService.createMonthlyHistory(monthlyHistory);
     }
 
+    @PatchMapping("/{id}")
+    public ResponseEntity<ApiResponse<RecordUpdateResponse>> updateRecord(
+            @RequestHeader("userId") long userId,
+            @PathVariable long id,
+            @RequestBody RecordUpdateRequest dto) {
+        RecordUpdateResponse data = recordService.updateRecord(userId, id, dto);
+        String message = "거래 수정 성공";
+        return ResponseEntity.ok(ApiResponse.ok(data, message));
+    }
+  
     @GetMapping("/summary/daily")
     public ResponseEntity<ApiResponse<List<DailySummaryResponse>>> getDailySummaries(
             @RequestHeader("userId") long userId,
@@ -60,8 +72,6 @@ public class RecordController {
         YearMonth yearMonth = YearMonth.parse(month);
         List<DailySummaryResponse> data = recordService.getDailySummaries(userId, yearMonth);
         String message = "일별 통계 조회 성공";
-
         return ResponseEntity.ok(ApiResponse.ok(data, message));
-
     }
 }

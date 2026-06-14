@@ -15,6 +15,27 @@ public class Records {
     private String memo;
     private LocalDate recordDate;
     private LocalDateTime createdAt;
+
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class RecordUpdateRequest {
+        private String type;
+        private long categoryId;
+        private String date;
+        private long amount;
+    }
+  
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class RecordUpdateResponse {
+        private long id;
+        private String type;
+        private String date;
+        private Categories.CategoryInfo category;
+        private long amount;
+    }
   
     @Getter
     @NoArgsConstructor
@@ -38,7 +59,6 @@ public class Records {
         private String memo;
     }
 
-    @Getter
     @AllArgsConstructor
     @NoArgsConstructor
     public static class RecordSaveResponse {

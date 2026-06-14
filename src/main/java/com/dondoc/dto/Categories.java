@@ -12,6 +12,12 @@ public class Categories {
     private String type;
 
     @Getter
+    @AllArgsConstructor
+    public static class CategoryInfo {
+        private long id;
+        private String name;
+    }
+  
     @Setter
     @NoArgsConstructor
     @AllArgsConstructor
